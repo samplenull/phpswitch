@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# Function to switch PHP versions
+phpswitch() {
+  if [ -z "$1" ]; then
+    echo -e "\033[31mUsage: phpswitch <version>\033[0m"
+    return 1
+  fi
+
+  VERSION=$1
+
+  # Unlink the current PHP version
+  echo -e "\033[33mUnlinking current PHP version...\033[0m"
+  brew unlink php
+
+  # Check if the specified PHP version is installed
+  if ! brew ls --versions php@$VERSION > /dev/null; then
+    echo -e "\033[33mPHP version $VERSION is not installed. Installing now...\033[0m"
+    brew install php@$VERSION
+  else
+    echo -e "\033[32mPHP version $VERSION is already installed.\033[0m"
+  fi
+
+  # Link the specified PHP version
+  echo -e "\033[33mLinking PHP version $VERSION...\033[0m"
+  brew link --force --overwrite php@$VERSION
+
+  # Remove any existing PHP path from .zshrc
+  echo -e "\033[33mUpdating PATH in .zshrc...\033[0m"
+  sed -i '' '/\/usr\/local\/opt\/php/d' ~/.zshrc
+
+  # Add the new PHP version path to .zshrc
+  echo "export PATH=\"/usr/local/opt/php@$VERSION/bin:/usr/local/opt/php@$VERSION/sbin:\$PATH\"" >> ~/.zshrc
+
+  # Inform the user and reload the Zsh session
+  echo -e "\033[33mReloading Zsh session...\033[0m"
+  echo -e "\033[32mPHP $VERSION has been set. The shell will now reload. Please verify the PHP version with 'php -v'.\033[0m"
+  exec zsh
+}
+
+# Execute the function with the provided argument
+phpswitch "$1"
